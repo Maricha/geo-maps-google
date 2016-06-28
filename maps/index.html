@@ -4,11 +4,16 @@
   <meta charset="UTF-8">
   <title>Geolocation learning</title>
   <script src="script.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA1TJW78o2rNYJQfNFq-bkWfVvLrSWsyVg&libraries=geometry"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1jwXozyFMllwXkOlkPxVdrJNg-Mfnx68&libraries=places"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>My location</h1>
+  <form id="search">
+    <label for="query">Seach for:</label>
+    <input id="query">
+    <button>Search</button>
+  </form>
   <p id="location"></p>
   <div id="map">
     Loading....

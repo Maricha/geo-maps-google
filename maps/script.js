@@ -1,73 +1,115 @@
-let map;
-let markers = [];
-let infoWindow;
-
+var map;
+var infoWindow;
+var markers = [];
+var service;
+var currentCoords = {};
 
 function displayLocation(position) {
-  let latitude = position.coords.latitude;
-  let longitude = position.coords.longitude;
+	var latitude = position.coords.latitude;
+	var longitude = position.coords.longitude;
 
-  let pLocation = document.getElementById("location");
-  pLocation.innerHTML = latitude + ", " + longitude;
+	var pLocation = document.getElementById("location");
+	pLocation.innerHTML = latitude + ", " + longitude;
 
-  showMap(position.coords);
+	showMap(position.coords);
 }
 
 function showMap(coords) {
-  let googleLatLong = new google.maps.LatLng(coords.latitude, coords.longitude);
 
-  let mapOptions = {
-    zoom: 11,
-    center: googleLatLong,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
+	currentCoords.latitude = coords.latitude;
+	currentCoords.longitude = coords.longitude;
 
-  const mapDiv = document.getElementById("map");
-  let map = new google.maps.Map(mapDiv, mapOptions);
-  infoWindow = new google.maps.InfoWindow();
+	var googleLatLong = new google.maps.LatLng(coords.latitude, coords.longitude);
+	var mapOptions = {
+		zoom: 11,
+		center: googleLatLong,
+		mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
 
-  google.maps.event.addListener(map, "click", (event) => {
-    let latitude = event.latLng.lat();
-    let longitude = event.latLng.lng();
+	var mapDiv = document.getElementById("map");
+	map = new google.maps.Map(mapDiv, mapOptions);
+	service = new google.maps.places.PlacesService(map);
+	infoWindow = new google.maps.InfoWindow();
 
-    let pLocation = document.getElementById("location");
-    pLocation.innerHTML = latitude + ", " + longitude;
-    map.panTo(event.latLng);
+	google.maps.event.addListener(map, "click", function(event) {
+		var latitude = event.latLng.lat();
+		var longitude = event.latLng.lng();
 
-    createMarker(event.latLng);
+		currentCoords.latitude = latitude;
+		currentCoords.longitude = longitude;
 
-  });
+		var pLocation = document.getElementById("location");
+		pLocation.innerHTML = latitude + ", " + longitude;
+		map.panTo(event.latLng);
 
+		createMarker(event.latLng);
+	});
+
+
+	showForm();
+}
+
+function makePlacesRequest(lat, lng) {
+	var query = document.getElementById("query").value;
+	if(query) {
+			var placesRequest = {
+				location: new google.maps.LatLng(lat, lng),
+				radius: 1000,
+				keyword: query
+			};
+
+			service.nearbySearch(placesRequest, function(results, status){
+				if(status == google.maps.places.PlacesServiceStatus.OK) {
+					results.forEach(function(place) {
+						console.log(place);
+					});
+				}
+			});
+
+	} else {
+		console.log("no query");
+	}
 }
 
 function createMarker(latLng) {
-  markerOptions = {
-    position: latLng,
-    map: map,
-    clickable: true
-  };
+	var markerOptions = {
+		position: latLng,
+		map: map,
+		clickable: true
+	};
 
-  let marker = new google.maps.Marker(markerOptions);
-  markers.push(marker);
+	var marker = new google.maps.Marker(markerOptions);
+	markers.push(marker);
 
+	google.maps.event.addListener(marker, "click", function(event) {
+		infoWindow.setContent("Location: " + event.latLng.lat().toFixed(2) +
+			", " + event.latLng.lng().toFixed(2));
+		infoWindow.open(map, marker);
+	});
+}
 
-  google.maps.event.addListener(marker, "click", (event) => {
-      infoWindow.setContent("Location: " + event.latLng.lat().toFixed(2) +
-      ", " + event.latLng.lng().toFixed(2));
-      infoWindow.open(map, marker);
-  });
+function showForm() {
+	var searchForm = document.getElementById("search");
+	searchForm.style.visibility = "visible";
+	var button = document.querySelector("button")
+	button.onclick = function(e) {
+		e.preventDefault();
+		makePlacesRequest(currentCoords.latitude, currentCoords.longitude);
+		console.log("clicket");
+	}
+
 }
 
 function displayError(error) {
-  const errors = ["unknown error", "Permission denied by user", "Position not available", "Timeout error"];
-  let message = errors[error.code];
-  console.warn("Error in getting your location: " + message, error.message);
+	var errors = ["Unknown error", "Permission denied by user", "Position not available", "Timeout error"];
+	var message = errors[error.code];
+	console.warn("Error in getting your location: " + message, error.message);
 }
 
-window.onload = () => {
-  if(navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(displayLocation, displayError);
-  } else {
-    alert("Sorry you have old browser");
-  }
+window.onload = function() {
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(displayLocation, displayError);
+	} else {
+		alert("Sorry, this browser doesn't support geolocation!");
+	}
 }
